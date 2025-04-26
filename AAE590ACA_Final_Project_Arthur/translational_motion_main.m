@@ -1,0 +1,204 @@
+%Testing nonlinear relative orbit equations of motion given initial
+%conditions in the paper
+clear all
+close all
+
+global drdt_log t_log
+drdt_log = [];
+
+t0 = 0;
+tf = 8.5*3600*3; %[8.5 hours in sec]
+sim_tol = 1e-12;
+options = odeset('RelTol',sim_tol, 'AbsTol',sim_tol);
+
+r_E = 6378*1000; %[m]
+mu = 3.986004418e14;% [m3/s2]
+
+%% propagate inertial target dynamics
+% target
+a_t = 11628*1000; %[m]
+e_t = 0.4085;
+e_t = 0.2;%-----------debugging--------------
+i_t = 70; % [deg]
+%i_t = 89.5;%-----------debugging--------------
+RAAN_t = 50; %[deg]
+argp_t = 80; %[deg]
+true_anom_t = 0; %[deg]
+
+tf = 2*pi*sqrt(a_t^3/mu);
+tspan = linspace(t0,tf, 1000);
+% 
+
+% %-----------debugging with circular polar orbit, seeing weird -y bias--------------
+% a_t     = 6878e3;     % semi-major axis [m]
+% e_t     = 0.001;          % circular
+% i_t     = 89.0;         % degrees (polar)
+% RAAN_t  = 0;          % degrees
+% argp_t  = 0;          % degrees
+% true_anom_t = 0;          % degrees
+
+%target cartesian inertial position
+[r_t0, v_t0] = keplerian2cartesian(a_t, e_t, i_t, RAAN_t, argp_t, true_anom_t, mu)
+xt0 = [r_t0; v_t0];
+
+
+%instead, define chaser through keplerian elements to debug:
+% chaser
+a_c = 11628*1000; %[m]
+e_c = 0.4085;
+e_c = 0.2;%-----------debugging--------------
+i_c = 70 + 5; % [deg]
+%i_c = 89.5;%-----------debugging--------------
+RAAN_c = 50; %[deg]
+argp_c = 80; %[deg]
+true_anom_c = 0.01; %[deg]
+
+%target cartesian inertial position
+[r_c0, v_c0] = keplerian2cartesian(a_c, e_c, i_c, RAAN_c, argp_c, true_anom_c, mu)
+xc0 = [r_c0; v_c0];
+
+rel_0 = xt0 -xc0;
+
+% %propagate chaser inertially
+% %given relative state
+% r0 = [960; -590; 290].*1000; %initial relative position, m
+% v0 = [0; -55; 0]; %initial relative velocity, m/s
+% r0 = [1000; 0; 0].*1000; %initial relative position, m
+% v0 = [0; 1; 0]; %initial relative velocity, m/s
+% rel_0 = [r0;v0];
+% 
+% xc0 = xt0 - rel_0;
+
+
+
+%propagate target with two body dynamics
+inertial_t_trajectory = ode45(@(t,x) Cartesian_EOM(t,x,mu), tspan, xt0, options);
+t_hist = deval(inertial_t_trajectory, tspan);
+x_hist_t = t_hist(1:3,:);
+
+%propagate chaser with two body dynamics
+inertial_c_trajectory = ode45(@(t,x) Cartesian_EOM(t,x,mu), tspan, xc0, options);
+c_hist = deval(inertial_c_trajectory, tspan);
+x_hist_c = c_hist(1:3,:);
+
+
+%plot target orbit
+figure() 
+hold on 
+plot3(x_hist_t(1,:),x_hist_t(2,:),x_hist_t(3,:), 'r','LineWidth', 1.5)
+plot3(x_hist_t(1,1),x_hist_t(2,1),x_hist_t(3,1), 'd','MarkerEdgeColor','r','MarkerFaceColor','r','MarkerSize',10)
+plot3(x_hist_c(1,:),x_hist_c(2,:),x_hist_c(3,:), 'b--','LineWidth', 1.5)
+plot3(x_hist_c(1,1),x_hist_c(2,1),x_hist_c(3,1), 'd','MarkerEdgeColor','b','MarkerFaceColor','b','MarkerSize',10)
+[earthX, earthY, earthZ] = sphere;
+surf(r_E*earthX,r_E*earthY,r_E*earthZ, 'FaceColor','none')
+axis equal
+xlabel('x')
+ylabel('y')
+zlabel('z')
+view(3)
+title('Inertially Propagated Orbits')
+hold off
+
+%plot difference in inertial frame
+figure() 
+hold on 
+plot3(x_hist_t(1,:)-x_hist_c(1,:),x_hist_t(2,:)-x_hist_c(2,:),x_hist_t(3,:)-x_hist_c(3,:), 'r','LineWidth', 1.5)
+axis equal
+xlabel('x')
+ylabel('y')
+zlabel('z')
+title('Difference of Inertially Propagated Orbits')
+view(3)
+hold off
+
+for i = 1:size(x_hist_t,2)
+    normdiff(i) = norm(x_hist_t(:,i)-x_hist_c(:,i));
+end
+%plot magnitude of difference in inertial frame
+figure() 
+hold on 
+plot(normdiff-  normdiff(1))
+xlabel('t')
+ylabel('norm(diff)')
+title('Magnitude of Difference of Inertially Propagated Orbits')
+hold off
+%% propagate relative dynamics
+
+
+%full initial relative state
+% x0 = [r0;v0];
+x0 = rel_0
+[omegaT0, ~] = kepler_orbital_elements_eval(0, mu, a_t, e_t);
+omegat00 = sqrt(mu/a_t^3);
+%x0(5) =   omegaT0*x0(1);
+
+
+%propagate with linearized relative orbital dynamics
+relative_trajectory = ode45(@(t,x) linearized_rel_orbital_dynamics(t, x, mu,a_t,e_t), tspan, x0, options);
+state_hist = deval(relative_trajectory, tspan);
+
+%% plot relative state history
+
+figure() 
+hold on 
+plot3(state_hist(1,:),state_hist(2,:),state_hist(3,:), 'r','LineWidth', 1.5)
+plot3(state_hist(1,1),state_hist(2,1),state_hist(3,1), 'd','MarkerEdgeColor','r','MarkerFaceColor','r','MarkerSize',10)
+plot3(state_hist(1,end),state_hist(2,end),state_hist(3,end), 'd','MarkerEdgeColor','b','MarkerFaceColor','b','MarkerSize',10)
+xlabel('x')
+ylabel('y')
+zlabel('z')
+legend('state history','initial', 'final')
+title('Relative State History')
+view(3)
+
+figure() 
+hold on 
+plot(state_hist(1,:),state_hist(3,:), 'r','LineWidth', 1.5)
+plot(state_hist(1,1),state_hist(3,1), 'd','MarkerEdgeColor','r','MarkerFaceColor','r','MarkerSize',10)
+plot(state_hist(1,end),state_hist(3,end), 'd','MarkerEdgeColor','b','MarkerFaceColor','b','MarkerSize',10)
+xlabel('x')
+ylabel('z')
+legend('state history','initial', 'final')
+title('Relative State History (XZ Plane)')
+
+figure()
+subplot(2,1,1)
+plot(tspan, state_hist(1,:), 'r','LineWidth', 1.5)
+xlabel('timestep')
+ylabel('\Delta X (t)')
+subplot(2,1,2)
+plot(tspan,state_hist(3,:), 'r','LineWidth', 1.5)
+ylabel('\Delta Z (t)')
+
+%% checking dr/dt time history
+figure()
+plot(t_log,drdt_log)
+title('drdt time history')
+
+
+
+
+% %% testing - reconstruct chaser trajectory in inertial frame
+% rT_hist = t_hist(1:3,:)';
+% vT_hist = t_hist(4:6,:)';
+% x_rel_hist = state_hist';
+% 
+% [rC_hist, vC_hist] = reconstruct_chaser_from_relative(tspan, x_rel_hist, rT_hist, vT_hist);
+% 
+% figure() 
+% hold on 
+% plot3(rC_hist(:,1),rC_hist(:,2),rC_hist(:,3), 'r','LineWidth', 1.5)
+% plot3(rT_hist(:,1),rT_hist(:,2),rT_hist(:,3), 'b--','LineWidth', 1.5)
+% plot3(rC_hist(1,1),rC_hist(1,2),rC_hist(1,3), 'd','MarkerEdgeColor','r','MarkerFaceColor','r','MarkerSize',10)
+% plot3(rT_hist(1,1),rT_hist(1,2),rT_hist(1,3), 'd','MarkerEdgeColor','b','MarkerFaceColor','b','MarkerSize',10)
+% [earthX, earthY, earthZ] = sphere;
+% surf(r_E*earthX,r_E*earthY,r_E*earthZ, 'FaceColor','none')
+% view(3)
+% axis equal
+% xlabel('x')
+% ylabel('y')
+% zlabel('z')
+% xlim([-2*r_E, 2*r_E])
+% ylim([-2*r_E, 2*r_E])
+% zlim([-2*r_E, 2*r_E])
+% %plot3(chaser_state(1,1),chaser_state(2,1),chaser_state(3,1), 'd','MarkerEdgeColor','r','MarkerFaceColor','r','MarkerSize',10)

@@ -1,0 +1,34 @@
+function [omegaT, omegaT_dot] = kepler_orbital_elements_eval(t, mu, a, e)
+    % Constants
+    n = sqrt(mu / a^3); %mean motion
+    M = n * t; %mean anomaly
+
+    %Get Eccentric anomaly
+    E = mean_to_ecc_anomaly_2(M,e);
+
+    %true anom
+    theta = 2 * atan2(sqrt(1 + e)*sin(E/2), sqrt(1 - e)*cos(E/2));
+
+
+    % Orbital radius (Eq. 7)
+    rT = a * (1 - e^2) / (1 + e * cos(theta));
+
+    % Semi-latus rectum
+    p = a * (1 - e^2);
+
+     h = sqrt(mu * a * (1 - e^2));
+    pp = h^2/mu;
+
+    % dr/dθ (Eq. 9)
+    dr_dtheta = (p * e * sin(theta)) / (1 + e * cos(theta))^2;
+
+    % dθ/dt = h / r^2 ? not sure about this one
+    h = sqrt(mu * a * (1 - e^2));
+    dtheta_dt = h / rT^2;
+
+    omegaT = sqrt(mu / rT^3);
+
+    % ω̇_OT (Eq. 8),     [verified]
+    %omegaT_dot = -(3/2) * rT^(-5/2) * sqrt(mu) * rT_dot * dtheta_dt;
+    omegaT_dot = -(3/2) * rT^(-5/2) * sqrt(mu) * dr_dtheta * dtheta_dt;
+end
