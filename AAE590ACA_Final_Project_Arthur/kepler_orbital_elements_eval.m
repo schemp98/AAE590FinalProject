@@ -10,17 +10,18 @@ global drdt_log t_log
     %true anom
     theta = 2 * atan2(sqrt(1 + e)*sin(E/2), sqrt(1 - e)*cos(E/2));
 
-
-    rT = a * (1 - e^2) / (1 + e * cos(theta));
-
     p = a * (1 - e^2);
+
+    rT = p / (1 + e * cos(theta));
+
+   
 
     h = sqrt(mu * a * (1 - e^2));
     p_test = h^2/mu;
 
     dr_dtheta = (p * e * sin(theta)) / (1 + e * cos(theta))^2;
 
-    h = sqrt(mu * a * (1 - e^2));
+    h = sqrt(mu * p);
     dtheta_dt = h / rT^2;
 
     z = sqrt(1-e^2);

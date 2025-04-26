@@ -7,7 +7,7 @@ global drdt_log t_log
 drdt_log = [];
 
 t0 = 0;
-tf = 8.5*3600*3; %[8.5 hours in sec]
+tf = 8.5*3600; %[8.5 hours in sec]
 sim_tol = 1e-12;
 options = odeset('RelTol',sim_tol, 'AbsTol',sim_tol);
 
@@ -136,7 +136,7 @@ omegat00 = sqrt(mu/a_t^3);
 %propagate with linearized relative orbital dynamics
 relative_trajectory = ode45(@(t,x) linearized_rel_orbital_dynamics(t, x, mu,a_t,e_t), tspan, x0, options);
 state_hist = deval(relative_trajectory, tspan);
-final_error = norm(state_hist(:,end));
+
 %% plot relative state history
 
 figure() 

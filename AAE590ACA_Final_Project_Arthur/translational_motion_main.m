@@ -7,7 +7,7 @@ global drdt_log t_log
 drdt_log = [];
 
 t0 = 0;
-tf = 8.5*3600*3; %[8.5 hours in sec]
+tf = 8.5*3600; %[8.5 hours in sec]
 sim_tol = 1e-12;
 options = odeset('RelTol',sim_tol, 'AbsTol',sim_tol);
 
@@ -18,14 +18,14 @@ mu = 3.986004418e14;% [m3/s2]
 % target
 a_t = 11628*1000; %[m]
 e_t = 0.4085;
-e_t = 0.2;%-----------debugging--------------
+%e_t = 0.2;%-----------debugging--------------
 i_t = 70; % [deg]
 %i_t = 89.5;%-----------debugging--------------
 RAAN_t = 50; %[deg]
 argp_t = 80; %[deg]
 true_anom_t = 0; %[deg]
 
-tf = 2*pi*sqrt(a_t^3/mu);
+%tf = 2*pi*sqrt(a_t^3/mu);
 tspan = linspace(t0,tf, 1000);
 % 
 
@@ -46,7 +46,7 @@ xt0 = [r_t0; v_t0];
 % chaser
 a_c = 11628*1000; %[m]
 e_c = 0.4085;
-e_c = 0.2;%-----------debugging--------------
+%e_c = 0.2;%-----------debugging--------------
 i_c = 70 + 5; % [deg]
 %i_c = 89.5;%-----------debugging--------------
 RAAN_c = 50; %[deg]
