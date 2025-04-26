@@ -3,13 +3,10 @@
 clear all
 close all
 
-global drdt_log t_log
+global drdt_log t_log omegaT_log omegaT_dot_log
 drdt_log = [];
 
-t0 = 0;
-tf = 8.5*3600; %[8.5 hours in sec]
-sim_tol = 1e-12;
-options = odeset('RelTol',sim_tol, 'AbsTol',sim_tol);
+
 
 r_E = 6378*1000; %[m]
 mu = 3.986004418e14;% [m3/s2]
@@ -18,24 +15,24 @@ mu = 3.986004418e14;% [m3/s2]
 % target
 a_t = 11628*1000; %[m]
 e_t = 0.4085;
-e_t = 0.2;%-----------debugging--------------
+e_t = 0.0;%-----------debugging--------------
 i_t = 70; % [deg]
 %i_t = 89.5;%-----------debugging--------------
 RAAN_t = 50; %[deg]
 argp_t = 80; %[deg]
 true_anom_t = 0; %[deg]
 
+%set up sim time
+t0 = 0;
+tf = 8.5*3600; %[8.5 hours in sec]
+%alternatively plot for one orbit
 tf = 2*pi*sqrt(a_t^3/mu);
-tspan = linspace(t0,tf, 1000);
-% 
+sim_tol = 1e-12;
+dt = 30;
+ options = odeset('RelTol',sim_tol, 'AbsTol',sim_tol,'MaxStep',dt);
+%options = odeset('RelTol',sim_tol, 'AbsTol',sim_tol);
 
-% %-----------debugging with circular polar orbit, seeing weird -y bias--------------
-% a_t     = 6878e3;     % semi-major axis [m]
-% e_t     = 0.001;          % circular
-% i_t     = 89.0;         % degrees (polar)
-% RAAN_t  = 0;          % degrees
-% argp_t  = 0;          % degrees
-% true_anom_t = 0;          % degrees
+tspan = linspace(t0,tf, 1000);
 
 %target cartesian inertial position
 [r_t0, v_t0] = keplerian2cartesian(a_t, e_t, i_t, RAAN_t, argp_t, true_anom_t, mu)
@@ -46,7 +43,7 @@ xt0 = [r_t0; v_t0];
 % chaser
 a_c = 11628*1000; %[m]
 e_c = 0.4085;
-e_c = 0.2;%-----------debugging--------------
+e_c = 0.0;%-----------debugging--------------
 i_c = 70 + 5; % [deg]
 %i_c = 89.5;%-----------debugging--------------
 RAAN_c = 50; %[deg]
@@ -54,20 +51,17 @@ argp_c = 80; %[deg]
 true_anom_c = 0.01; %[deg]
 
 %target cartesian inertial position
-[r_c0, v_c0] = keplerian2cartesian(a_c, e_c, i_c, RAAN_c, argp_c, true_anom_c, mu)
+[r_c0, v_c0] = keplerian2cartesian(a_c, e_c, i_c, RAAN_c, argp_c, true_anom_c, mu);
 xc0 = [r_c0; v_c0];
 
 rel_0 = xt0 -xc0;
 
-% %propagate chaser inertially
-% %given relative state
-% r0 = [960; -590; 290].*1000; %initial relative position, m
-% v0 = [0; -55; 0]; %initial relative velocity, m/s
-% r0 = [1000; 0; 0].*1000; %initial relative position, m
-% v0 = [0; 1; 0]; %initial relative velocity, m/s
-% rel_0 = [r0;v0];
+% %instead, define rel_0 as it is in the fina lrendezvous docking stage: 
+%  r0 = [25; 10; 50]; %initial relative position, m
+%  v0 = [0; 0; 0]; %initial relative velocity, m/s
 % 
-% xc0 = xt0 - rel_0;
+%  rel_0 = [r0;v0];
+%  xc0 = xt0 - rel_0;
 
 
 
@@ -86,9 +80,9 @@ x_hist_c = c_hist(1:3,:);
 figure() 
 hold on 
 plot3(x_hist_t(1,:),x_hist_t(2,:),x_hist_t(3,:), 'r','LineWidth', 1.5)
-plot3(x_hist_t(1,1),x_hist_t(2,1),x_hist_t(3,1), 'd','MarkerEdgeColor','r','MarkerFaceColor','r','MarkerSize',10)
 plot3(x_hist_c(1,:),x_hist_c(2,:),x_hist_c(3,:), 'b--','LineWidth', 1.5)
 plot3(x_hist_c(1,1),x_hist_c(2,1),x_hist_c(3,1), 'd','MarkerEdgeColor','b','MarkerFaceColor','b','MarkerSize',10)
+plot3(x_hist_t(1,1),x_hist_t(2,1),x_hist_t(3,1), 'd','MarkerEdgeColor','r','MarkerFaceColor','r','MarkerSize',10)
 [earthX, earthY, earthZ] = sphere;
 surf(r_E*earthX,r_E*earthY,r_E*earthZ, 'FaceColor','none')
 axis equal
@@ -97,6 +91,7 @@ ylabel('y')
 zlabel('z')
 view(3)
 title('Inertially Propagated Orbits')
+legend('target', 'chaser')
 hold off
 
 %plot difference in inertial frame
@@ -127,9 +122,8 @@ hold off
 
 %full initial relative state
 % x0 = [r0;v0];
-x0 = rel_0
+x0 = rel_0;
 [omegaT0, ~] = kepler_orbital_elements_eval(0, mu, a_t, e_t);
-omegat00 = sqrt(mu/a_t^3);
 %x0(5) =   omegaT0*x0(1);
 
 
@@ -170,17 +164,31 @@ subplot(2,1,2)
 plot(tspan,state_hist(3,:), 'r','LineWidth', 1.5)
 ylabel('\Delta Z (t)')
 
-%% checking dr/dt time history
-figure()
-plot(t_log,drdt_log)
-title('drdt time history')
-
-
-
+% %% checking dr/dt time history
+% figure()
+% plot(t_log,drdt_log)
+% title('drdt time history')
+% 
+% figure()
+% plot(t_log,omegaT_dot_log)
+% title('\dot{\omega_T} time history')
+% 
+% omegaT_dot_grad= gradient(omegaT_log', t_log)';
+% figure()
+% plot(t_log,omegaT_dot_grad)
+% title('\omega_T gradient time history')
+% 
+% figure()
+% plot(t_log,(omegaT_dot_log -omegaT_dot_grad))
+% title('\omega_T gradient vs \dot{\omega_T} difference time history')
 
 % %% testing - reconstruct chaser trajectory in inertial frame
-% rT_hist = t_hist(1:3,:)';
-% vT_hist = t_hist(4:6,:)';
+rT_hist = t_hist(1:3,:)';
+vT_hist = t_hist(4:6,:)';
+
+rC_hist = c_hist(1:3,:)';
+vC_hist = c_hist(4:6,:)';
+
 % x_rel_hist = state_hist';
 % 
 % [rC_hist, vC_hist] = reconstruct_chaser_from_relative(tspan, x_rel_hist, rT_hist, vT_hist);
@@ -202,3 +210,16 @@ title('drdt time history')
 % ylim([-2*r_E, 2*r_E])
 % zlim([-2*r_E, 2*r_E])
 % %plot3(chaser_state(1,1),chaser_state(2,1),chaser_state(3,1), 'd','MarkerEdgeColor','r','MarkerFaceColor','r','MarkerSize',10)
+
+% %% 
+% rel_LVLH_hist = inertial_diff_to_LVLH(rT_hist, vT_hist, rC_hist);
+% 
+% figure;
+% plot3(rel_LVLH_hist(:,1), rel_LVLH_hist(:,2), rel_LVLH_hist(:,3));
+% xlabel('x_{LVLH} [m]');
+% ylabel('y_{LVLH} [m]');
+% zlabel('z_{LVLH} [m]');
+% title('Relative Motion in Target LVLH Frame');
+% grid on;
+% 
+% view(3);

@@ -1,4 +1,5 @@
-function [omegaT, omegaT_dot] = kepler_orbital_elements_eval(t, mu, a, e)
+function [rT, omegaT, omegaT_dot] = kepler_orbital_elements_eval(t, mu, a, e)
+global drdt_log t_log omegaT_log omegaT_dot_log
     % Constants
     n = sqrt(mu / a^3); %mean motion
     M = n * t; %mean anomaly
@@ -9,26 +10,34 @@ function [omegaT, omegaT_dot] = kepler_orbital_elements_eval(t, mu, a, e)
     %true anom
     theta = 2 * atan2(sqrt(1 + e)*sin(E/2), sqrt(1 - e)*cos(E/2));
 
-
-    % Orbital radius (Eq. 7)
-    rT = a * (1 - e^2) / (1 + e * cos(theta));
-
-    % Semi-latus rectum
     p = a * (1 - e^2);
 
-     h = sqrt(mu * a * (1 - e^2));
-    pp = h^2/mu;
+    rT = p / (1 + e * cos(theta));
+    
+    h = sqrt(mu * a * (1 - e^2));
+    p_test = h^2/mu;
 
-    % dr/dθ (Eq. 9)
     dr_dtheta = (p * e * sin(theta)) / (1 + e * cos(theta))^2;
 
-    % dθ/dt = h / r^2 ? not sure about this one
-    h = sqrt(mu * a * (1 - e^2));
+    h = sqrt(mu * p);
     dtheta_dt = h / rT^2;
 
-    omegaT = sqrt(mu / rT^3);
+    z = sqrt(1-e^2);
 
-    % ω̇_OT (Eq. 8),     [verified]
-    %omegaT_dot = -(3/2) * rT^(-5/2) * sqrt(mu) * rT_dot * dtheta_dt;
+    dtheta_dt_test = z*(1 + e*cos(theta))^2/(z^3); %----debugging
+
+    %dtheta_dt_test - dtheta_dt
+    
+    omegaT = sqrt(mu / rT^3);
+    
+    %from vallado for noncircular orbits
+    %omegaT = sqrt(mu*p / (rT^4));
+
     omegaT_dot = -(3/2) * rT^(-5/2) * sqrt(mu) * dr_dtheta * dtheta_dt;
+
+    drdt_log(end+1) = dr_dtheta * dtheta_dt;
+    t_log(end+1) = t;
+    omegaT_log(end +1) = omegaT;
+    omegaT_dot_log(end +1) = omegaT_dot;
+
 end
