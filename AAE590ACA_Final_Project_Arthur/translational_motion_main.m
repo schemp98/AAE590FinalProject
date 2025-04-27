@@ -65,8 +65,11 @@ xc0 = [r_c0; v_c0];
 rel_0 = xt0 -xc0;
 
 %original implementation: use the S_0 vec in the paper
-  r0 = [960; -590; 290].*1000; %initial relative position, m
-  v0 = [0; -55; 0]; %initial relative velocity, m/s
+  %r0 = [960; -590; 290].*1000; %initial relative position, m
+  %v0 = [0; -55; 0]; %initial relative velocity, m/s
+  r0 = [1260; -790; 490].*1000; %initial relative position, m
+  v0 = [20; -55; 10]; %initial relative velocity, m/s
+
   rel_0 = [r0;v0];
   xc0 = xt0 - rel_0;
 
@@ -159,7 +162,7 @@ plot(tspan, state_hist_SDRE(1,:), 'r','LineWidth', 1.5)
 plot(tspan, state_hist_LQR(1,:), 'b--','LineWidth', 1.5)
 xlabel('time [sec]')
 ylabel('\Delta X (t)')
-xlim([0 500])
+xlim([0 1000])
 legend('SDRE', 'LQR')
 subplot(3,1,2)
 hold on
@@ -168,7 +171,7 @@ plot(tspan, state_hist_LQR(2,:), 'b--','LineWidth', 1.5)
 xlabel('time [sec]')
 ylabel('\Delta Y (t)')
 legend('SDRE', 'LQR')
-xlim([0 500])
+xlim([0 1000])
 subplot(3,1,3)
 hold on
 plot(tspan,state_hist_SDRE(3,:), 'r','LineWidth', 1.5)
@@ -176,7 +179,7 @@ plot(tspan, state_hist_LQR(3,:), 'b--','LineWidth', 1.5)
 xlabel('time [sec]')
 ylabel('\Delta Z (t)')
 legend('SDRE', 'LQR')
-xlim([0 500])
+xlim([0 1000])
 
 %relative velocity
 figure()
@@ -187,21 +190,21 @@ plot(tspan, state_hist_SDRE(4,:), 'r','LineWidth', 1.5)
 plot(tspan, state_hist_LQR(4,:), 'b--','LineWidth', 1.5)
 xlabel('time [sec]')
 ylabel('\Delta v_x (t)')
-xlim([0 500])
+xlim([0 1000])
 subplot(3,1,2)
 hold on
 plot(tspan, state_hist_SDRE(5,:), 'r','LineWidth', 1.5)
 plot(tspan, state_hist_LQR(5,:), 'b--','LineWidth', 1.5)
 xlabel('time [sec]')
 ylabel('\Delta v_y (t)')
-xlim([0 500])
+xlim([0 1000])
 subplot(3,1,3)
 hold on
 plot(tspan, state_hist_SDRE(6,:), 'r','LineWidth', 1.5)
 plot(tspan, state_hist_LQR(6,:), 'b--','LineWidth', 1.5)
 xlabel('time [sec]')
 ylabel('\Delta v_z (t)')
-xlim([0 500])
+xlim([0 1000])
 
 %control history (globals for now)
 figure()
