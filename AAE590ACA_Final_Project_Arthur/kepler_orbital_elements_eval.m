@@ -15,16 +15,16 @@ function [rT, omegaT, omegaT_dot] = kepler_orbital_elements_eval(t, mu, a, e)
     rT = p / (1 + e * cos(theta));
 
     h = sqrt(mu * a * (1 - e^2));
-    p_test = h^2/mu;
+    % p_test = h^2/mu;
 
     dr_dtheta = (p * e * sin(theta)) / (1 + e * cos(theta))^2;
 
     h = sqrt(mu * p);
     dtheta_dt = h / rT^2;
 
-    z = sqrt(1-e^2);
-
-    dtheta_dt_test = z*(1 + e*cos(theta))^2/(z^3); %----debugging
+    % z = sqrt(1-e^2);
+    % 
+    % dtheta_dt_test = z*(1 + e*cos(theta))^2/(z^3); %----debugging
 
     %dtheta_dt_test - dtheta_dt
     
