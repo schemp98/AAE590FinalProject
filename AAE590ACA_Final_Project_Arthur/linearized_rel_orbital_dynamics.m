@@ -22,7 +22,7 @@ function dxdt = linearized_rel_orbital_dynamics(t, x, mu, a, e, controller_type,
     A(5,:) = [-omegaT_dot, mu_over_rC3 + omegaT^2, 0, -2*omegaT, 0, 0];
     A(6,:) = [0, 0, mu_over_rC3, 0, 0, 0];
 
-    K = calculateControllerGainfunction(t, mu, a, e, controller_type,B,R,Q);
+    K = calculateControllerGainfunction(t,x, mu, a, e, controller_type,B,R,Q);
     
     u = K*x;
 

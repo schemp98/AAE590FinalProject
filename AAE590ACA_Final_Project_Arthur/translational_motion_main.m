@@ -33,7 +33,7 @@ true_anom_t = 0; %[deg]
 %set up sim time
 t0 = 0;
 %tf = 8.5*3600; %[8.5 hours in sec]
-%alternatively plot for one orbit
+%alternatively plot for one orbit for now
 tf = 2*pi*sqrt(a_t^3/mu);
 sim_tol = 1e-12;
 dt = 30;
@@ -48,7 +48,7 @@ Q = zeros(6,6);
 Q(1:3,1:3) = eye(3).*0.01;
 Q(4:6,4:6) = eye(3).*0.001;
 
-R = eye(3).*10^4;
+R = eye(3).*10^7;
 
 
 tspan = linspace(t0,tf, 3000);
@@ -221,13 +221,16 @@ xlim([0 1000])
 
 %% Control history
 
-X = state_hist_SDRE;
+X_SDRE = state_hist_SDRE;
+X_LQR = state_hist_LQR;
 
 for tt = 1:numel(tspan)
 
 t = tspan(tt);
-K = calculateControllerGainfunction(t,  mu, a_t, e_t, 'SDRE',B,R,Q);
-u_history_global(:,tt) = K*X(:,tt);
+K_SDRE = calculateControllerGainfunction(t, X_SDRE(:,tt),  mu, a_t, e_t, 'SDRE',B,R,Q);
+K_LQR = calculateControllerGainfunction(t, X_SDRE(:,tt),  mu, a_t, e_t, 'LQR',B,R,Q);
+u_history_global_SDRE(:,tt) = K*X_SDRE(:,tt);
+u_history_global_LQR(:,tt) = K*X_LQR(:,tt);
 end
 
 t_history_global = tspan;
@@ -235,21 +238,27 @@ t_history_global = tspan;
 %%
 figure()
 subplot(3,1,1)
+hold on
 sgtitle('Control History')
-plot(t_history_global, u_history_global(1,:), 'g','LineWidth', 1.5)
+plot(t_history_global, u_history_global_SDRE(1,:), 'r','LineWidth', 1.5)
+plot(t_history_global, u_history_global_LQR(1,:), 'b--','LineWidth', 1.5)
 xlabel('time [sec]')
 ylabel('u_x (t)')
-xlim([0 500])
+xlim([0 1000])
 subplot(3,1,2)
-plot(t_history_global, u_history_global(2,:), 'g','LineWidth', 1.5)
+hold on
+plot(t_history_global, u_history_global_SDRE(2,:), 'r','LineWidth', 1.5)
+plot(t_history_global, u_history_global_LQR(2,:), 'b--','LineWidth', 1.5)
 xlabel('time [sec]')
 ylabel('u_y (t)')
-xlim([0 500])
+xlim([0 1000])
 subplot(3,1,3)
-plot(t_history_global, u_history_global(3,:), 'g','LineWidth', 1.5)
+hold on
+plot(t_history_global, u_history_global_SDRE(3,:), 'r','LineWidth', 1.5)
+plot(t_history_global, u_history_global_LQR(3,:), 'b--','LineWidth', 1.5)
 xlabel('time [sec]')
 ylabel('u_z (t)')
-xlim([0 500])
+xlim([0 1000])
 
 
 

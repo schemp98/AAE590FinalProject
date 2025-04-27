@@ -1,14 +1,24 @@
-function K = calculateControllerGainfunction(t,  mu, a, e, controller_type,B,R,Q)
+function K = calculateControllerGainfunction(t, x, mu, a, e, controller_type,B,R,Q)
 
 [rT, omegaT, omegaT_dot] = kepler_orbital_elements_eval(t, mu, a, e);
 
 
     %Construct Dynamics
+    % A = zeros(6,6);
+    % A(1:3, 4:6) = eye(3);
+    % A(4,:) = [3*omegaT^2, omegaT_dot, 0, 0, 2*omegaT, 0];
+    % A(5,:) = [-omegaT_dot, 0, 0, -2*omegaT, 0, 0];
+    % A(6,:) = [0, 0, -omegaT^2, 0, 0, 0];
+
+        rC = [rT + x(1); x(2); x(3)];
+    normrC= norm(rC);
+    mu_over_rC3 = -mu/(normrC^3);
+
     A = zeros(6,6);
     A(1:3, 4:6) = eye(3);
-    A(4,:) = [3*omegaT^2, omegaT_dot, 0, 0, 2*omegaT, 0];
-    A(5,:) = [-omegaT_dot, 0, 0, -2*omegaT, 0, 0];
-    A(6,:) = [0, 0, -omegaT^2, 0, 0, 0];
+    A(4,:) = [ mu_over_rC3 + omegaT^2, omegaT_dot, 0, 0, 2*omegaT, 0];
+    A(5,:) = [-omegaT_dot, mu_over_rC3 + omegaT^2, 0, -2*omegaT, 0, 0];
+    A(6,:) = [0, 0, mu_over_rC3, 0, 0, 0];
 
     switch controller_type
         case 'SDRE'
