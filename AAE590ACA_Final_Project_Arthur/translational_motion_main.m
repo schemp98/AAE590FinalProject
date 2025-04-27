@@ -1,15 +1,15 @@
 %Main Execution Scrip for Translational Dynamics
-    %includes:
-    %  -Target and chaser state definitions
-    %  -Inertial Trajectory Propagation
-    %  -Relative Trajectory Propagation
-    %  -Various debugging
-    %  -Plotting
+%includes:
+%  -Target and chaser state definitions
+%  -Inertial Trajectory Propagation
+%  -Relative Trajectory Propagation
+%  -Various debugging
+%  -Plotting
 tic
 clear all
 close all
 
-global u_history_global t_history_global
+% global u_history_global t_history_global
 t_hist = [];
 % global drdt_log t_log omegaT_log omegaT_dot_log
 % drdt_log = [];
@@ -37,8 +37,19 @@ t0 = 0;
 tf = 2*pi*sqrt(a_t^3/mu);
 sim_tol = 1e-12;
 dt = 30;
- options = odeset('RelTol',sim_tol, 'AbsTol',sim_tol,'MaxStep',dt);
+options = odeset('RelTol',sim_tol, 'AbsTol',sim_tol,'MaxStep',dt);
 %options = odeset('RelTol',sim_tol, 'AbsTol',sim_tol);
+
+B = [zeros(3,3); eye(3)];
+
+%define Q and R
+Q = zeros(6,6);
+
+Q(1:3,1:3) = eye(3).*0.01;
+Q(4:6,4:6) = eye(3).*0.001;
+
+R = eye(3).*10^4;
+
 
 tspan = linspace(t0,tf, 3000);
 
@@ -65,10 +76,10 @@ xc0 = [r_c0; v_c0];
 rel_0 = xt0 -xc0;
 
 %original implementation: use the S_0 vec in the paper
-  r0 = [960; -590; 290].*1000; %initial relative position, m
-  v0 = [0; -55; 0]; %initial relative velocity, m/s
-  rel_0 = [r0;v0];
-  xc0 = xt0 - rel_0;
+r0 = [960; -590; 290].*1000; %initial relative position, m
+v0 = [0; -55; 0]; %initial relative velocity, m/s
+rel_0 = [r0;v0];
+xc0 = xt0 - rel_0;
 
 
 
@@ -84,8 +95,8 @@ x_hist_c = c_hist(1:3,:);
 
 
 %plot target orbit
-figure() 
-hold on 
+figure()
+hold on
 plot3(x_hist_t(1,:),x_hist_t(2,:),x_hist_t(3,:), 'r','LineWidth', 1.5)
 plot3(x_hist_c(1,:),x_hist_c(2,:),x_hist_c(3,:), 'b--','LineWidth', 1.5)
 plot3(x_hist_c(1,1),x_hist_c(2,1),x_hist_c(3,1), 'd','MarkerEdgeColor','b','MarkerFaceColor','b','MarkerSize',10)
@@ -102,8 +113,8 @@ legend('target', 'chaser')
 hold off
 
 %plot difference in inertial frame
-figure() 
-hold on 
+figure()
+hold on
 plot3(x_hist_t(1,:)-x_hist_c(1,:),x_hist_t(2,:)-x_hist_c(2,:),x_hist_t(3,:)-x_hist_c(3,:), 'r','LineWidth', 1.5)
 axis equal
 xlabel('x')
@@ -112,13 +123,13 @@ zlabel('z')
 title('Difference of Inertially Propagated Orbits')
 view(3)
 hold off
-% 
+%
 % for i = 1:size(x_hist_t,2)
 %     normdiff(i) = norm(x_hist_t(:,i)-x_hist_c(:,i));
 % end
 % %plot magnitude of difference in inertial frame
-% figure() 
-% hold on 
+% figure()
+% hold on
 % plot(normdiff-  normdiff(1))
 % xlabel('t')
 % ylabel('norm(diff)')
@@ -130,16 +141,16 @@ x0 = rel_0;
 
 %propagate with linearized relative orbital dynamics
 %SDRE First
-relative_trajectory_SDRE = ode45(@(t,x) linearized_rel_orbital_dynamics(t, x, mu,a_t,e_t,'SDRE'), tspan, x0, options);
+relative_trajectory_SDRE = ode45(@(t,x) linearized_rel_orbital_dynamics(t, x, mu,a_t,e_t,'SDRE',B,R,Q), tspan, x0, options);
 state_hist_SDRE = deval(relative_trajectory_SDRE, tspan);
 
 %LQR
-relative_trajectory_LQR = ode45(@(t,x) linearized_rel_orbital_dynamics(t, x, mu,a_t,e_t,'LQR'), tspan, x0, options);
+relative_trajectory_LQR = ode45(@(t,x) linearized_rel_orbital_dynamics(t, x, mu,a_t,e_t,'LQR',B,R,Q), tspan, x0, options);
 state_hist_LQR = deval(relative_trajectory_LQR, tspan);
 
 %% plot relative state history
-% figure() 
-% hold on 
+% figure()
+% hold on
 % plot3(state_hist_SDRE(1,:),state_hist_SDRE(2,:),state_hist_SDRE(3,:), 'r','LineWidth', 1.5)
 % plot3(state_hist_SDRE(1,1),state_hist_SDRE(2,1),state_hist_SDRE(3,1), 'd','MarkerEdgeColor','r','MarkerFaceColor','r','MarkerSize',10)
 % plot3(state_hist_SDRE(1,end),state_hist_SDRE(2,end),state_hist_SDRE(3,end), 'd','MarkerEdgeColor','b','MarkerFaceColor','b','MarkerSize',10)
@@ -203,7 +214,20 @@ xlabel('time [sec]')
 ylabel('\Delta v_z (t)')
 xlim([0 500])
 
-%control history (globals for now)
+%% Control history
+
+X = state_hist_SDRE;
+
+for tt = 1:numel(tspan)
+
+t = tspan(tt);
+K = calculateControllerGainfunction(t,  mu, a_t, e_t, 'SDRE',B,R,Q);
+u_history_global(:,tt) = K*X(:,tt);
+end
+
+t_history_global = tspan;
+
+%%
 figure()
 subplot(3,1,1)
 sgtitle('Control History')
@@ -230,16 +254,16 @@ xlim([0 500])
 % figure()
 % plot(t_log,drdt_log)
 % title('drdt time history')
-% 
+%
 % figure()
 % plot(t_log,omegaT_dot_log)
 % title('\dot{\omega_T} time history')
-% 
+%
 % omegaT_dot_grad= gradient(omegaT_log', t_log)';
 % figure()
 % plot(t_log,omegaT_dot_grad)
 % title('\omega_T gradient time history')
-% 
+%
 % figure()
 % plot(t_log,(omegaT_dot_log -omegaT_dot_grad))
 % title('\omega_T gradient vs \dot{\omega_T} difference time history')
@@ -247,16 +271,16 @@ xlim([0 500])
 % %% testing - reconstruct chaser trajectory in inertial frame
 % rT_hist = t_hist(1:3,:)';
 % vT_hist = t_hist(4:6,:)';
-% 
+%
 % rC_hist = c_hist(1:3,:)';
 % vC_hist = c_hist(4:6,:)';
-% 
+%
 % x_rel_hist = state_hist';
-% 
+%
 % [rC_hist, vC_hist] = reconstruct_chaser_from_relative(tspan, x_rel_hist, rT_hist, vT_hist);
-% 
-% figure() 
-% hold on 
+%
+% figure()
+% hold on
 % plot3(rC_hist(:,1),rC_hist(:,2),rC_hist(:,3), 'r','LineWidth', 1.5)
 % plot3(rT_hist(:,1),rT_hist(:,2),rT_hist(:,3), 'b--','LineWidth', 1.5)
 % plot3(rC_hist(1,1),rC_hist(1,2),rC_hist(1,3), 'd','MarkerEdgeColor','r','MarkerFaceColor','r','MarkerSize',10)
@@ -273,9 +297,9 @@ xlim([0 500])
 % zlim([-2*r_E, 2*r_E])
 %plot3(chaser_state(1,1),chaser_state(2,1),chaser_state(3,1), 'd','MarkerEdgeColor','r','MarkerFaceColor','r','MarkerSize',10)
 
-% %% 
+% %%
 % rel_LVLH_hist = inertial_diff_to_LVLH(rT_hist, vT_hist, rC_hist);
-% 
+%
 % figure;
 % plot3(rel_LVLH_hist(:,1), rel_LVLH_hist(:,2), rel_LVLH_hist(:,3));
 % xlabel('x_{LVLH} [m]');
@@ -283,7 +307,7 @@ xlim([0 500])
 % zlabel('z_{LVLH} [m]');
 % title('Relative Motion in Target LVLH Frame');
 % grid on;
-% 
+%
 % view(3);
 
 %reconstruct control history:
