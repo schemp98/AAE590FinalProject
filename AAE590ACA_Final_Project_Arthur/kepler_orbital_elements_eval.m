@@ -1,5 +1,5 @@
 function [rT, omegaT, omegaT_dot] = kepler_orbital_elements_eval(t, mu, a, e)
-global drdt_log t_log omegaT_log omegaT_dot_log
+% global drdt_log t_log omegaT_log omegaT_dot_log
     % Constants
     n = sqrt(mu / a^3); %mean motion
     M = n * t; %mean anomaly
@@ -13,7 +13,7 @@ global drdt_log t_log omegaT_log omegaT_dot_log
     p = a * (1 - e^2);
 
     rT = p / (1 + e * cos(theta));
-    
+
     h = sqrt(mu * a * (1 - e^2));
     p_test = h^2/mu;
 
@@ -35,9 +35,12 @@ global drdt_log t_log omegaT_log omegaT_dot_log
 
     omegaT_dot = -(3/2) * rT^(-5/2) * sqrt(mu) * dr_dtheta * dtheta_dt;
 
-    drdt_log(end+1) = dr_dtheta * dtheta_dt;
-    t_log(end+1) = t;
-    omegaT_log(end +1) = omegaT;
-    omegaT_dot_log(end +1) = omegaT_dot;
+    %collecting variables for noncircular orbit diagnostics---------------
+    %commenting out as its no longer needed
+
+   % drdt_log(end+1) = dr_dtheta * dtheta_dt;
+   % t_log(end+1) = t;
+   % omegaT_log(end +1) = omegaT;
+   % omegaT_dot_log(end +1) = omegaT_dot;
 
 end

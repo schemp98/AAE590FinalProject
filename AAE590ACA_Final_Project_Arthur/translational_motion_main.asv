@@ -15,7 +15,7 @@ mu = 3.986004418e14;% [m3/s2]
 % target
 a_t = 11628*1000; %[m]
 e_t = 0.4085;
-e_t = 0.0;%-----------debugging--------------
+e_t = 0.2;%-----------debugging--------------
 i_t = 70; % [deg]
 %i_t = 89.5;%-----------debugging--------------
 RAAN_t = 50; %[deg]
@@ -24,7 +24,7 @@ true_anom_t = 0; %[deg]
 
 %set up sim time
 t0 = 0;
-tf = 8.5*3600; %[8.5 hours in sec]
+%tf = 8.5*3600; %[8.5 hours in sec]
 %alternatively plot for one orbit
 tf = 2*pi*sqrt(a_t^3/mu);
 sim_tol = 1e-12;
@@ -43,12 +43,12 @@ xt0 = [r_t0; v_t0];
 % chaser
 a_c = 11628*1000; %[m]
 e_c = 0.4085;
-e_c = 0.0;%-----------debugging--------------
+e_c = 0.2;%-----------debugging--------------
 i_c = 70 + 5; % [deg]
 %i_c = 89.5;%-----------debugging--------------
 RAAN_c = 50; %[deg]
 argp_c = 80; %[deg]
-true_anom_c = 0.01; %[deg]
+true_anom_c = 0.1; %[deg]
 
 %target cartesian inertial position
 [r_c0, v_c0] = keplerian2cartesian(a_c, e_c, i_c, RAAN_c, argp_c, true_anom_c, mu);
@@ -105,18 +105,18 @@ zlabel('z')
 title('Difference of Inertially Propagated Orbits')
 view(3)
 hold off
-
-for i = 1:size(x_hist_t,2)
-    normdiff(i) = norm(x_hist_t(:,i)-x_hist_c(:,i));
-end
-%plot magnitude of difference in inertial frame
-figure() 
-hold on 
-plot(normdiff-  normdiff(1))
-xlabel('t')
-ylabel('norm(diff)')
-title('Magnitude of Difference of Inertially Propagated Orbits')
-hold off
+% 
+% for i = 1:size(x_hist_t,2)
+%     normdiff(i) = norm(x_hist_t(:,i)-x_hist_c(:,i));
+% end
+% %plot magnitude of difference in inertial frame
+% figure() 
+% hold on 
+% plot(normdiff-  normdiff(1))
+% xlabel('t')
+% ylabel('norm(diff)')
+% title('Magnitude of Difference of Inertially Propagated Orbits')
+% hold off
 %% propagate relative dynamics
 
 
