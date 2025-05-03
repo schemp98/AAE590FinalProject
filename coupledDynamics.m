@@ -9,7 +9,7 @@ x0_att          = [x0_q;x0_w];
 
 DCM             = D(x0_q);
 
-use_RWA = true;
+use_RWA = false;
 if  use_RWA
 
 h_wc  = x0(14:16);

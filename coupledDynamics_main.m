@@ -13,7 +13,7 @@ tic
 clear all
 close all
 
-far_Rend = true;
+far_Rend = false;
 % global u_history_global t_history_global
 t_hist = [];
 
@@ -53,13 +53,6 @@ Q(4:6,4:6) = eye(3).*0.001;
 R = eye(3).*10^4;
 
 
-tspan = linspace(t0,tf, 3000);
-
-%target cartesian inertial position
-[r_t0, v_t0] = keplerian2cartesian(a_t, e_t, i_t, RAAN_t, argp_t, true_anom_t, mu);
-xt0 = [r_t0; v_t0];
-
-
 %original implementation: use the S_0 vec in the paper
 
 r0 = [960; -590; 3290].*1000; %initial relative position, m
@@ -68,24 +61,8 @@ v0 = [0; -55; 0]; %initial relative velocity, m/s
 DCM = rot_z(argp_t*180/pi)*rot_x(i_t*180/pi)*rot_x(RAAN_t*180/pi);
 DCM = DCM';
 rel_0 = [r0;v0];
-[~, omegaT, ~] = kepler_orbital_elements_eval(0, mu, a_t, e_t);
 
-omegaT_I = DCM*[0;0;omegaT];
 
-xc0 = xt0 - [DCM*r0;DCM*(v0)-cross(omegaT_I ,r0)];  % Chaser
-
-%propagate target with two body dynamics
-inertial_t_trajectory = ode45(@(t,x) Cartesian_EOM(t,x,mu), tspan, xt0, options);
-t_hist = deval(inertial_t_trajectory, tspan);
-x_hist_t = t_hist(1:3,:);
-
-%propagate chaser with two body dynamics
-inertial_c_trajectory = ode45(@(t,x) Cartesian_EOM(t,x,mu), tspan, xc0, options);
-c_hist = deval(inertial_c_trajectory, tspan);
-x_hist_c = c_hist(1:3,:);
-
-% 
-%% Near propagate relative dynamics
 
 q0          = [0;0;0;1];
 if far_Rend
@@ -105,8 +82,35 @@ h_wc0       = [-3;5;1];  % For Near Term, use Figure 13!!
 % Assume that both body frames are aligned
 P1_c        = D(q0)*[1.5;1;0];
 P0_t        = [1;0;1];
+tf = 50;
 
 end
+
+
+
+tspan = linspace(t0,tf, 3000);
+
+%target cartesian inertial position
+[r_t0, v_t0] = keplerian2cartesian(a_t, e_t, i_t, RAAN_t, argp_t, true_anom_t, mu);
+xt0 = [r_t0; v_t0];
+
+[~, omegaT, ~] = kepler_orbital_elements_eval(0, mu, a_t, e_t);
+
+omegaT_I = DCM*[0;0;omegaT];
+
+xc0 = xt0 - [DCM*r0;DCM*(v0)-cross(omegaT_I ,r0)];  % Chaser
+
+%propagate target with two body dynamics
+inertial_t_trajectory = ode45(@(t,x) Cartesian_EOM(t,x,mu), tspan, xt0, options);
+t_hist = deval(inertial_t_trajectory, tspan);
+x_hist_t = t_hist(1:3,:);
+
+%propagate chaser with two body dynamics
+inertial_c_trajectory = ode45(@(t,x) Cartesian_EOM(t,x,mu), tspan, xc0, options);
+c_hist = deval(inertial_c_trajectory, tspan);
+x_hist_c = c_hist(1:3,:);
+
+% 
 
 
 I_c = diag([500 550 600]);
