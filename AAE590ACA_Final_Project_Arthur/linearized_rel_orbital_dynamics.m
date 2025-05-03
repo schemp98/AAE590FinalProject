@@ -18,15 +18,15 @@ function dxdt = linearized_rel_orbital_dynamics(t, x, mu, a, e, controller_type,
     %Construct Dynamics (nonlinear)
     A = zeros(6,6);
     A(1:3, 4:6) = eye(3);
-    A(4,:) = [ mu_over_rC3 + omegaT^2, omegaT_dot, 0, 0, 2*omegaT, 0];
+    A(4,:) = [ mu_over_rC3 + 2*omegaT^2, omegaT_dot, 0, 0, 2*omegaT, 0];
     A(5,:) = [-omegaT_dot, mu_over_rC3 + omegaT^2, 0, -2*omegaT, 0, 0];
     A(6,:) = [0, 0, mu_over_rC3, 0, 0, 0];
 
-    K = calculateControllerGainfunction(t,x, mu, a, e, controller_type,B,R,Q);
-    
-    u = K*x;
+    % K = calculateControllerGainfunction(t,x, mu, a, e, controller_type,B,R,Q);
+    % 
+    % u = K*x;
 
-    dxdt = A*x + B*u;
+    dxdt = A*x;% + B*u*0;
 
     % %collect control history for plotting later
     % u_history_global(:,end+1) = u;

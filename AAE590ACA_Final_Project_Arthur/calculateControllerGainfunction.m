@@ -16,7 +16,7 @@ function K = calculateControllerGainfunction(t, x, mu, a, e, controller_type,B,R
 
     A = zeros(6,6);
     A(1:3, 4:6) = eye(3);
-    A(4,:) = [ mu_over_rC3 + omegaT^2, omegaT_dot, 0, 0, 2*omegaT, 0];
+    A(4,:) = [ mu_over_rC3 + 2*omegaT^2, omegaT_dot, 0, 0, 2*omegaT, 0];
     A(5,:) = [-omegaT_dot, mu_over_rC3 + omegaT^2, 0, -2*omegaT, 0, 0];
     A(6,:) = [0, 0, mu_over_rC3, 0, 0, 0];
 

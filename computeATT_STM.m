@@ -1,8 +1,10 @@
 function A = computeATT_STM(q,w_c,I_T,I_C,h_wc)
 
+w_t = zeros(3,1);  % Assume target body is not rotating
+
 Dq = D(q);
 % Eqn (50)
-CO = -skew(Dq*inv(I_c)*inv(Dq)*w_t);
+CO = -skew(Dq*inv(I_C)*inv(Dq)*w_t);
 FO = inv(I_T)*skew(h_wc)*I_T*Dq*inv(I_C)*inv(Dq);
 
 

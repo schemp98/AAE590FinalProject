@@ -6,8 +6,8 @@ clear all
 att0 = zeros(3,1);
 
 q0 = [0;0;0;1];
-% omega0 = [-0.4;0.5;0.2];  % Rad/sec
-omega0 = [-0.0;0.5;0.];  % Rad/sec
+omega0 = [-0.4;0.5;0.2];  % Rad/sec
+% omega0 = [-0.0;0.5;0.];  % Rad/sec
 
 I_c = diag([500 550 600]);
 I_t = I_c;
@@ -16,7 +16,7 @@ t0 = 0;
 tf = 50;
 
 x0 = [q0;omega0];
-u = [0;0;0];
+u = [0.4*3;0;0.6];
 
 
 dt = 1e-3;
@@ -45,6 +45,6 @@ figure;plot(out.x,P_array');legend('x','y','z')
 max_check = abs(max(vecnorm(P_array)) - norm(P) ) < 1e-10;  % Check that our vector did not change size
 min_check = abs(min(vecnorm(P_array)) - norm(P) ) < 1e-10;  % Check that our vector did not change size
 
-if or(max_check,min_check)
+if not(or(max_check,min_check))
 error('something went wrong')
 end
