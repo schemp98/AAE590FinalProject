@@ -1,10 +1,11 @@
-function A = computeATT_STM(q,w_c,I_T,I_C,h_wc)
+function A = computeATT_STM(q,w_t,I_T,I_C,h_wc)
 
-w_t = zeros(3,1);  % Assume target body is not rotating
+
 
 Dq = D(q);
+w_c = Dq'*w_t; % Transform Relative Rate from Target Frame to Chaser Frame
 % Eqn (50)
-CO = -skew(Dq*inv(I_C)*inv(Dq)*w_t);
+CO = -skew(Dq*inv(I_C)*inv(Dq)*w_t)*I_C*inv(Dq);
 FO = inv(I_T)*skew(h_wc)*I_T*Dq*inv(I_C)*inv(Dq);
 
 

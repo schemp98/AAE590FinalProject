@@ -6,8 +6,8 @@ clear all
 att0 = zeros(3,1);
 
 q0 = [0;0;0;1];
-omega0 = [-0.4;0.5;0.2];  % Rad/sec
-% omega0 = [-0.0;0.5;0.];  % Rad/sec
+% omega0 = [-0.4;0.5;0.2];  % Rad/sec
+omega0 = [-0.1;0.;0.2];  % Rad/sec
 
 I_c = diag([500 550 600]);
 I_t = I_c;
@@ -16,17 +16,18 @@ t0 = 0;
 tf = 50;
 
 x0 = [q0;omega0];
-u = [0.4*3;0;0.6];
+u = [0.4*3;0;0.6]*0;
 
 
 dt = 1e-3;
 
 tol = 1e-12;
 odeOptions = odeset('RelTol',tol,'AbsTol',tol);
+h_wc = zeros(3,1);
+T_cc = u;
+out = ode45(@attitudeDynamics,[t0 tf],x0,odeOptions,I_c,T_cc,h_wc);
 
-out = ode45(@attitudeDynamics,[t0 tf],x0,odeOptions,I_c,u);
-
-plot(out.x,out.y)
+% plot(out.x,out.y)
 
 P = [1;0;0];
 

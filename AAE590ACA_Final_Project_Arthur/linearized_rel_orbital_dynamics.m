@@ -1,4 +1,4 @@
-function dxdt = linearized_rel_orbital_dynamics(t, x, mu, a, e, controller_type,B,R,Q)
+function dxdt = linearized_rel_orbital_dynamics(t, x, mu, a, e)
 % global u_history_global t_history_global
     % Evaluate orbital parameters at time t
     [rT, omegaT, omegaT_dot] = kepler_orbital_elements_eval(t, mu, a, e);

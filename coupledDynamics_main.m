@@ -87,14 +87,14 @@ q0          = [0;0;0;1];
 if far_Rend
 % rel_0 = rel_0;
 h_wc0       = zeros(3,1);  % initial Reaction Wheel Output 
-omega0      = [-0.3;0.5;0.1];  % Rad/sec
+omega0      = [-0.3;0.5;0.1]*1e-3*0;  % Rad/sec
 % Assume that both body frames are aligned
 P1_c        = D(q0)*[1.5;1;0]*0;
 P0_t        = [1;0;1]*0;
 
 else
 rel_0       = [25;10;50;0;-0.06;0];
-omega0      = [-0.4;0.5;0.2];  % Rad/sec
+omega0      = [-0.4;0.5;0.2]*1e-3;  % Rad/sec
 h_wc0       = [-3;5;1];  % For Near Term, use Figure 13!!
 
 % Assume that both body frames are aligned
