@@ -34,14 +34,15 @@ true_anom_t = 0; %[deg]
 
 %set up sim time
 t0 = 0;
-%tf = 8.5*3600; %[8.5 hours in sec]
+tf = 8.5*3600; %[8.5 hours in sec]
 %alternatively plot for one orbit for now
-tf = 2*pi*sqrt(a_t^3/mu);
+% tf = 2*pi*sqrt(a_t^3/mu);
+% tf = 50;
 sim_tol = 1e-12;
 dt = 30;
 options = odeset('RelTol',sim_tol, 'AbsTol',sim_tol,'MaxStep',dt);
-
-B = [zeros(3,3); eye(3)];
+m = 1000;
+B = [zeros(3,3); eye(3)]/m;
 
 %define Q and R
 Q = zeros(6,6);
@@ -49,7 +50,7 @@ Q = zeros(6,6);
 Q(1:3,1:3) = eye(3).*0.01;
 Q(4:6,4:6) = eye(3).*0.001;
 
-R = eye(3).*10^7;
+R = eye(3).*10^4;
 
 
 tspan = linspace(t0,tf, 3000);
@@ -57,7 +58,6 @@ tspan = linspace(t0,tf, 3000);
 %target cartesian inertial position
 [r_t0, v_t0] = keplerian2cartesian(a_t, e_t, i_t, RAAN_t, argp_t, true_anom_t, mu);
 xt0 = [r_t0; v_t0];
-
 
 
 %original implementation: use the S_0 vec in the paper
@@ -68,7 +68,11 @@ v0 = [0; -55; 0]; %initial relative velocity, m/s
 DCM = rot_z(argp_t*180/pi)*rot_x(i_t*180/pi)*rot_x(RAAN_t*180/pi);
 DCM = DCM';
 rel_0 = [r0;v0];
-xc0 = xt0 - [DCM*r0;DCM*v0];
+[~, omegaT, ~] = kepler_orbital_elements_eval(0, mu, a_t, e_t);
+
+omegaT_I = DCM*[0;0;omegaT];
+
+xc0 = xt0 - [DCM*r0;DCM*(v0)-cross(omegaT_I ,r0)];  % Chaser
 
 %propagate target with two body dynamics
 inertial_t_trajectory = ode45(@(t,x) Cartesian_EOM(t,x,mu), tspan, xt0, options);
@@ -87,14 +91,15 @@ q0          = [0;0;0;1];
 if far_Rend
 % rel_0 = rel_0;
 h_wc0       = zeros(3,1);  % initial Reaction Wheel Output 
-omega0      = [-0.3;0.5;0.1]*1e-3*0;  % Rad/sec
+omega0      = [-0.3;0.5;0.1]*1e-2;  % Rad/sec
+% omega0      = [-0.3;0.5*0;0.1*0]*1e-2;  % Rad/sec
 % Assume that both body frames are aligned
 P1_c        = D(q0)*[1.5;1;0]*0;
 P0_t        = [1;0;1]*0;
 
 else
 rel_0       = [25;10;50;0;-0.06;0];
-omega0      = [-0.4;0.5;0.2]*1e-3;  % Rad/sec
+omega0      = [-0.4;0.5;0.2]*1e-2;  % Rad/sec
 h_wc0       = [-3;5;1];  % For Near Term, use Figure 13!!
 
 % Assume that both body frames are aligned
@@ -124,6 +129,25 @@ x0(4:6) =  x0(4:6) + cross(omega0,P1_c); % Eqn (27)
 relative_trajectory_SDRE = ode45(@(t,x) coupledDynamics(t, x, mu,a_t,e_t,'SDRE',B,R,Q,I_c,P1_c,P0_t), tspan, x0, options);
 state_hist_SDRE = deval(relative_trajectory_SDRE, tspan);
 
+omega_hist = state_hist_SDRE(11:13,:)';
+h_wc_hist = state_hist_SDRE(14:end,:)';
+figure;
+ylim_array = [-10 5;-5 10;-1 2]*1e-3;
+for ii = 1:3
+subplot(3,1,ii)
+plot(tspan,omega_hist(:,ii));grid on
+ylabel('rad/sec')
+ylim(ylim_array(ii,:))
+end
+
+figure;
+ylim_array = [-4 0;0 6;0 2];
+for ii = 1:3
+subplot(3,1,ii)
+plot(tspan,h_wc_hist(:,ii));grid on
+ylabel('N-m')
+ylim(ylim_array(ii,:))
+end
 %
 % %LQR
 % relative_trajectory_LQR = ode45(@(t,x) linearized_rel_orbital_dynamics(t, x, mu,a_t,e_t,'LQR',B,R,Q), tspan, x0, options);
