@@ -86,6 +86,10 @@ P1_c        = D(q0)*[1.5;1;0];
 P0_t        = [1;0;1];
 tf = 50;
 
+%% SCC This worked for close range... it runs VERY slow though....
+% POS_FACTOR = 10000000;
+% Q = POS_FACTOR*Q;
+% R = R/POS_FACTOR;
 end
 
 
