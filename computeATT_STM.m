@@ -1,7 +1,5 @@
 function A = computeATT_STM(q,w_t,I_T,I_C,h_wc)
 
-
-
 Dq = D(q);
 w_c = Dq'*w_t; % Transform Relative Rate from Target Frame to Chaser Frame
 % Eqn (50)

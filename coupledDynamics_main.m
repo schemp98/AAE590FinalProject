@@ -76,8 +76,11 @@ P0_t        = [1;0;1]*0;
 else
 rel_0       = [25;10;50;0;-0.06;0];
 omega0      = [-0.4;0.5;0.2]*1e-2;  % Rad/sec
+% omega0      = -[-0.4;0.;0.]*1e-2;  % Rad/sec
 h_wc0       = [-3;5;1];  % For Near Term, use Figure 13!!
-
+h_wc0       = [ -1.49999846234356
+          2.75000070984254
+         0.600001631426673];  % From Far Range Sim
 % Assume that both body frames are aligned
 P1_c        = D(q0)*[1.5;1;0];
 P0_t        = [1;0;1];

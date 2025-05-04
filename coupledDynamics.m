@@ -9,7 +9,7 @@ x0_att          = [x0_q;x0_w];
 
 DCM             = D(x0_q);
 
-use_RWA = false;
+use_RWA = true;
 if  use_RWA
 
 h_wc  = x0(14:16);
@@ -64,8 +64,8 @@ K = -inv(R_att)* B_att'* P;
 
 % Use small angle approximation
 phi   = DCM(2,3);  % roll
-theta = DCM(1,3);  % pitch
-psi   = DCM(2,1);  % yaw
+theta = DCM(3,1);  % pitch
+psi   = DCM(1,2);  % yaw
 
 
 x_att_K = [phi;theta;psi;x0_w];
