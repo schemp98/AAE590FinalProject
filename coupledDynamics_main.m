@@ -52,7 +52,6 @@ Q(4:6,4:6) = eye(3).*0.001;
 
 R = eye(3).*10^4;
 
-
 %original implementation: use the S_0 vec in the paper
 
 r0 = [960; -590; 3290].*1000; %initial relative position, m
@@ -88,7 +87,7 @@ end
 
 
 
-tspan = linspace(t0,tf, 3000);
+tspan = linspace(t0,tf, 1000);
 
 %target cartesian inertial position
 [r_t0, v_t0] = keplerian2cartesian(a_t, e_t, i_t, RAAN_t, argp_t, true_anom_t, mu);
@@ -169,34 +168,34 @@ end
 % legend('state history','initial', 'final')
 % title('Relative State History')
 % view(3)
-if 0
+if 1
     %relative position
     figure()
     sgtitle('Relative Position Time History')
     subplot(3,1,1)
     hold on
     plot(tspan, state_hist_SDRE(1,:), 'r','LineWidth', 1.5)
-    plot(tspan, state_hist_LQR(1,:), 'b--','LineWidth', 1.5)
+    %plot(tspan, state_hist_LQR(1,:), 'b--','LineWidth', 1.5)
     xlabel('time [sec]')
     ylabel('\Delta X (t)')
-    xlim([0 1000])
     legend('SDRE', 'LQR')
+
     subplot(3,1,2)
     hold on
     plot(tspan, state_hist_SDRE(2,:), 'r','LineWidth', 1.5)
-    plot(tspan, state_hist_LQR(2,:), 'b--','LineWidth', 1.5)
+    %plot(tspan, state_hist_LQR(2,:), 'b--','LineWidth', 1.5)
     xlabel('time [sec]')
     ylabel('\Delta Y (t)')
     legend('SDRE', 'LQR')
-    xlim([0 1000])
+
     subplot(3,1,3)
     hold on
     plot(tspan,state_hist_SDRE(3,:), 'r','LineWidth', 1.5)
-    plot(tspan, state_hist_LQR(3,:), 'b--','LineWidth', 1.5)
+    %plot(tspan, state_hist_LQR(3,:), 'b--','LineWidth', 1.5)
     xlabel('time [sec]')
     ylabel('\Delta Z (t)')
     legend('SDRE', 'LQR')
-    xlim([0 1000])
+
 
     %relative velocity
     figure()
@@ -204,37 +203,37 @@ if 0
     hold on
     sgtitle('Relative Velocity Time History')
     plot(tspan, state_hist_SDRE(4,:), 'r','LineWidth', 1.5)
-    plot(tspan, state_hist_LQR(4,:), 'b--','LineWidth', 1.5)
+    %plot(tspan, state_hist_LQR(4,:), 'b--','LineWidth', 1.5)
     xlabel('time [sec]')
     ylabel('\Delta v_x (t)')
-    xlim([0 1000])
+
     subplot(3,1,2)
     hold on
     plot(tspan, state_hist_SDRE(5,:), 'r','LineWidth', 1.5)
-    plot(tspan, state_hist_LQR(5,:), 'b--','LineWidth', 1.5)
+    %plot(tspan, state_hist_LQR(5,:), 'b--','LineWidth', 1.5)
     xlabel('time [sec]')
     ylabel('\Delta v_y (t)')
-    xlim([0 1000])
+
     subplot(3,1,3)
     hold on
     plot(tspan, state_hist_SDRE(6,:), 'r','LineWidth', 1.5)
-    plot(tspan, state_hist_LQR(6,:), 'b--','LineWidth', 1.5)
+  %  plot(tspan, state_hist_LQR(6,:), 'b--','LineWidth', 1.5)
     xlabel('time [sec]')
     ylabel('\Delta v_z (t)')
-    xlim([0 1000])
+
 
     %% Control history
 
     X_SDRE = state_hist_SDRE;
-    X_LQR = state_hist_LQR;
+   % X_LQR = state_hist_LQR;
 
     for tt = 1:numel(tspan)
 
         t = tspan(tt);
         K_SDRE = calculateControllerGainfunction(t, X_SDRE(:,tt),  mu, a_t, e_t, 'SDRE',B,R,Q);
-        K_LQR = calculateControllerGainfunction(t, X_SDRE(:,tt),  mu, a_t, e_t, 'LQR',B,R,Q);
-        u_history_global_SDRE(:,tt) = K*X_SDRE(:,tt);
-        u_history_global_LQR(:,tt) = K*X_LQR(:,tt);
+       % K_LQR = calculateControllerGainfunction(t, X_SDRE(:,tt),  mu, a_t, e_t, 'LQR',B,R,Q);
+        u_history_global_SDRE(:,tt) = K_SDRE*X_SDRE(1:6,tt);
+      %  u_history_global_LQR(:,tt) = K*X_LQR(:,tt);
     end
 
     t_history_global = tspan;
@@ -245,91 +244,27 @@ if 0
     hold on
     sgtitle('Control History')
     plot(t_history_global, u_history_global_SDRE(1,:), 'r','LineWidth', 1.5)
-    plot(t_history_global, u_history_global_LQR(1,:), 'b--','LineWidth', 1.5)
+ %   plot(t_history_global, u_history_global_LQR(1,:), 'b--','LineWidth', 1.5)
     xlabel('time [sec]')
     ylabel('u_x (t)')
-    xlim([0 1000])
+
     subplot(3,1,2)
     hold on
     plot(t_history_global, u_history_global_SDRE(2,:), 'r','LineWidth', 1.5)
-    plot(t_history_global, u_history_global_LQR(2,:), 'b--','LineWidth', 1.5)
+   % plot(t_history_global, u_history_global_LQR(2,:), 'b--','LineWidth', 1.5)
     xlabel('time [sec]')
     ylabel('u_y (t)')
-    xlim([0 1000])
+
     subplot(3,1,3)
     hold on
     plot(t_history_global, u_history_global_SDRE(3,:), 'r','LineWidth', 1.5)
-    plot(t_history_global, u_history_global_LQR(3,:), 'b--','LineWidth', 1.5)
+   % plot(t_history_global, u_history_global_LQR(3,:), 'b--','LineWidth', 1.5)
     xlabel('time [sec]')
     ylabel('u_z (t)')
-    xlim([0 1000])
 
 
 
-    %% debugging and other stuff, not used for replicating results
 
-    % %% checking dr/dt time history
-    % figure()
-    % plot(t_log,drdt_log)
-    % title('drdt time history')
-    %
-    % figure()
-    % plot(t_log,omegaT_dot_log)
-    % title('\dot{\omega_T} time history')
-    %
-    % omegaT_dot_grad= gradient(omegaT_log', t_log)';
-    % figure()
-    % plot(t_log,omegaT_dot_grad)
-    % title('\omega_T gradient time history')
-    %
-    % figure()
-    % plot(t_log,(omegaT_dot_log -omegaT_dot_grad))
-    % title('\omega_T gradient vs \dot{\omega_T} difference time history')
-
-    % %% testing - reconstruct chaser trajectory in inertial frame
-    % rT_hist = t_hist(1:3,:)';
-    % vT_hist = t_hist(4:6,:)';
-    %
-    % rC_hist = c_hist(1:3,:)';
-    % vC_hist = c_hist(4:6,:)';
-    %
-    % x_rel_hist = state_hist';
-    %
-    % [rC_hist, vC_hist] = reconstruct_chaser_from_relative(tspan, x_rel_hist, rT_hist, vT_hist);
-    %
-    % figure()
-    % hold on
-    % plot3(rC_hist(:,1),rC_hist(:,2),rC_hist(:,3), 'r','LineWidth', 1.5)
-    % plot3(rT_hist(:,1),rT_hist(:,2),rT_hist(:,3), 'b--','LineWidth', 1.5)
-    % plot3(rC_hist(1,1),rC_hist(1,2),rC_hist(1,3), 'd','MarkerEdgeColor','r','MarkerFaceColor','r','MarkerSize',10)
-    % plot3(rT_hist(1,1),rT_hist(1,2),rT_hist(1,3), 'd','MarkerEdgeColor','b','MarkerFaceColor','b','MarkerSize',10)
-    % [earthX, earthY, earthZ] = sphere;
-    % surf(r_E*earthX,r_E*earthY,r_E*earthZ, 'FaceColor','none')
-    % view(3)
-    % axis equal
-    % xlabel('x')
-    % ylabel('y')
-    % zlabel('z')
-    % xlim([-2*r_E, 2*r_E])
-    % ylim([-2*r_E, 2*r_E])
-    % zlim([-2*r_E, 2*r_E])
-    %plot3(chaser_state(1,1),chaser_state(2,1),chaser_state(3,1), 'd','MarkerEdgeColor','r','MarkerFaceColor','r','MarkerSize',10)
-
-    % %%
-    % rel_LVLH_hist = inertial_diff_to_LVLH(rT_hist, vT_hist, rC_hist);
-    %
-    % figure;
-    % plot3(rel_LVLH_hist(:,1), rel_LVLH_hist(:,2), rel_LVLH_hist(:,3));
-    % xlabel('x_{LVLH} [m]');
-    % ylabel('y_{LVLH} [m]');
-    % zlabel('z_{LVLH} [m]');
-    % title('Relative Motion in Target LVLH Frame');
-    % grid on;
-    %
-    % view(3);
-
-    %reconstruct control history:
-    %using global var for now
 end
 toc
 
