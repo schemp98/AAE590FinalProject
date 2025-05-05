@@ -14,6 +14,7 @@ clear all
 close all
 
 far_Rend = false;
+unCoupled = false;  % Only Relevant when doing Close Range
 % global u_history_global t_history_global
 t_hist = [];
 
@@ -34,7 +35,7 @@ true_anom_t = 0; %[deg]
 
 %set up sim time
 t0 = 0;
-tf = 8.5*3600; %[8.5 hours in sec]
+tf = 8.5*3600; %[8.5 hours in sec] for Far Range (Default)
 %alternatively plot for one orbit for now
 % tf = 2*pi*sqrt(a_t^3/mu);
 % tf = 50;
@@ -65,31 +66,45 @@ rel_0 = [r0;v0];
 
 q0          = [0;0;0;1];
 if far_Rend
-% rel_0 = rel_0;
-h_wc0       = zeros(3,1);  % initial Reaction Wheel Output 
-omega0      = [-0.3;0.5;0.1]*1e-2;  % Rad/sec
-% omega0      = [-0.3;0.5*0;0.1*0]*1e-2;  % Rad/sec
-% Assume that both body frames are aligned
-P1_c        = D(q0)*[1.5;1;0]*0;
-P0_t        = [1;0;1]*0;
+    % rel_0 = rel_0;
+    h_wc0       = zeros(3,1);  % initial Reaction Wheel Output
+    omega0      = [-0.3;0.5;0.1]*1e-2;  % Rad/sec
+    % omega0      = [-0.3;0.5*0;0.1*0]*1e-2;  % Rad/sec
+    % Assume that both body frames are aligned
+    P1_c        = D(q0)*[1.5;1;0]*0;
+    P0_t        = [1;0;1]*0;
 
 else
-rel_0       = [25;10;50;0;-0.06;0];
-omega0      = [-0.4;0.5;0.2]*1e-2;  % Rad/sec
-% omega0      = -[-0.4;0.;0.]*1e-2;  % Rad/sec
-h_wc0       = [-3;5;1];  % For Near Term, use Figure 13!!
-h_wc0       = [ -1.49999846234356
-          2.75000070984254
-         0.600001631426673];  % From Far Range Sim
-% Assume that both body frames are aligned
-P1_c        = D(q0)*[1.5;1;0];
-P0_t        = [1;0;1];
-tf = 50;
+    rel_0       = [25;10;50;0;-0.06;0];
+    omega0      = [-0.4;0.5;0.2]*1e-2;  % Rad/sec
+    % omega0      = -[-0.4;0.;0.]*1e-2;  % Rad/sec
+    h_wc0       = [-3;5;1];  % For Near Term, use Figure 13!!
+    h_wc0       = [ -1.49999846234356
+        2.75000070984254
+        0.600001631426673];  % From Far Range Sim
+    % Assume that both body frames are aligned
+    P1_c        = D(q0)*[1.5;1;0];
+    P0_t        = [1;0;1];
+    tf = 50;
 
-%% SCC This worked for close range... it runs VERY slow though....
-% POS_FACTOR = 10000000;
-% Q = POS_FACTOR*Q;
-% R = R/POS_FACTOR;
+
+    if unCoupled
+
+        % If Pos/Att are uncoupled dynamics, we just set the relative state to be
+        % the centered at the
+
+        % Add Arbitrary docking points
+        rel_0(1:3) =  rel_0(1:3) + P1_c - P0_t;  % Eqn (26)
+        rel_0(4:6) =  rel_0(4:6) + cross(omega0,P1_c); % Eqn (27)
+
+        P1_c        = D(q0)*[1.5;1;0]*0;
+        P0_t        = [1;0;1]*0;
+    end
+
+    %% SCC Arbitrarily changing the Cost Weighting, this seems to yield the desired results
+    POS_FACTOR = 100000;
+    Q = POS_FACTOR*Q;
+    R = R/POS_FACTOR;
 end
 
 
@@ -116,12 +131,12 @@ inertial_c_trajectory = ode45(@(t,x) Cartesian_EOM(t,x,mu), tspan, xc0, options)
 c_hist = deval(inertial_c_trajectory, tspan);
 x_hist_c = c_hist(1:3,:);
 
-% 
+%
 
 
 I_c = diag([500 550 600]);
 I_t = I_c;
-% 
+%
 % t0 = 0;
 % tf = 50;
 
@@ -143,21 +158,28 @@ omega_hist = state_hist_SDRE(11:13,:)';
 h_wc_hist = state_hist_SDRE(14:end,:)';
 figure;
 ylim_array = [-10 5;-5 10;-1 2]*1e-3;
+axis_str = 'xyz';
 for ii = 1:3
-subplot(3,1,ii)
-plot(tspan,omega_hist(:,ii));grid on
-ylabel('rad/sec')
-ylim(ylim_array(ii,:))
+    subplot(3,1,ii)
+    plot(tspan,omega_hist(:,ii));grid on
+    ylabel(['$$\omega_{',axis_str(ii),'}$$[rad/sec]'],'Interpreter','latex')
+    ylim(ylim_array(ii,:))
+    set(gca,'TickLabelInterpreter','latex')
 end
+xlabel('time (sec)','Interpreter','latex')
 
 figure;
 ylim_array = [-4 0;0 6;0 2];
 for ii = 1:3
-subplot(3,1,ii)
-plot(tspan,h_wc_hist(:,ii));grid on
-ylabel('N-m')
-ylim(ylim_array(ii,:))
+    subplot(3,1,ii)
+    plot(tspan,h_wc_hist(:,ii));grid on
+    ylabel(['$$h_{WC_',axis_str(ii),'}$$ [N-m]'],'Interpreter','latex')
+    % ylabel('N-m','Interpreter','latex')
+    ylim(ylim_array(ii,:))
+    set(gca,'TickLabelInterpreter','latex')
 end
+xlabel('time (sec)','Interpreter','latex')
+
 %
 % %LQR
 % relative_trajectory_LQR = ode45(@(t,x) linearized_rel_orbital_dynamics(t, x, mu,a_t,e_t,'LQR',B,R,Q), tspan, x0, options);
@@ -224,7 +246,7 @@ if 1
     subplot(3,1,3)
     hold on
     plot(tspan, state_hist_SDRE(6,:), 'r','LineWidth', 1.5)
-  %  plot(tspan, state_hist_LQR(6,:), 'b--','LineWidth', 1.5)
+    %  plot(tspan, state_hist_LQR(6,:), 'b--','LineWidth', 1.5)
     xlabel('time [sec]')
     ylabel('\Delta v_z (t)')
 
@@ -232,15 +254,15 @@ if 1
     %% Control history
 
     X_SDRE = state_hist_SDRE;
-   % X_LQR = state_hist_LQR;
+    % X_LQR = state_hist_LQR;
 
     for tt = 1:numel(tspan)
 
         t = tspan(tt);
         K_SDRE = calculateControllerGainfunction(t, X_SDRE(:,tt),  mu, a_t, e_t, 'SDRE',B,R,Q);
-       % K_LQR = calculateControllerGainfunction(t, X_SDRE(:,tt),  mu, a_t, e_t, 'LQR',B,R,Q);
+        % K_LQR = calculateControllerGainfunction(t, X_SDRE(:,tt),  mu, a_t, e_t, 'LQR',B,R,Q);
         u_history_global_SDRE(:,tt) = K_SDRE*X_SDRE(1:6,tt);
-      %  u_history_global_LQR(:,tt) = K*X_LQR(:,tt);
+        %  u_history_global_LQR(:,tt) = K*X_LQR(:,tt);
     end
 
     t_history_global = tspan;
@@ -251,21 +273,21 @@ if 1
     hold on
     sgtitle('Control History')
     plot(t_history_global, u_history_global_SDRE(1,:), 'r','LineWidth', 1.5)
- %   plot(t_history_global, u_history_global_LQR(1,:), 'b--','LineWidth', 1.5)
+    %   plot(t_history_global, u_history_global_LQR(1,:), 'b--','LineWidth', 1.5)
     xlabel('time [sec]')
     ylabel('u_x (t)')
 
     subplot(3,1,2)
     hold on
     plot(t_history_global, u_history_global_SDRE(2,:), 'r','LineWidth', 1.5)
-   % plot(t_history_global, u_history_global_LQR(2,:), 'b--','LineWidth', 1.5)
+    % plot(t_history_global, u_history_global_LQR(2,:), 'b--','LineWidth', 1.5)
     xlabel('time [sec]')
     ylabel('u_y (t)')
 
     subplot(3,1,3)
     hold on
     plot(t_history_global, u_history_global_SDRE(3,:), 'r','LineWidth', 1.5)
-   % plot(t_history_global, u_history_global_LQR(3,:), 'b--','LineWidth', 1.5)
+    % plot(t_history_global, u_history_global_LQR(3,:), 'b--','LineWidth', 1.5)
     xlabel('time [sec]')
     ylabel('u_z (t)')
 
